@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Integration - QuizTailor</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Reset some basic styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* General font and layout */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .token-info, .redeem-section {
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .balance-card {
+            background-color: #007bff;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-secondary {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .redeem-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .option-card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            flex: 1;
+        }
+
+        footer {
+            background-color: #007bff;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>QuizTailor Token Dashboard</h1>
+    </header>
+
+    <main>
+        <div class="token-info">
+            <h2>Your Token Balance</h2>
+            <div id="balance" class="balance-card">
+                <span id="tokenBalance">0</span> D-Tokens
+            </div>
+            <button id="connectWallet" class="btn-primary">Connect Wallet</button>
+        </div>
+
+        <div class="redeem-section">
+            <h2>Redeem Your Tokens</h2>
+            <div class="redeem-options">
+                <div class="option-card">
+                    <h3>eBooks</h3>
+                    <p>Cost: 50 D-Tokens</p>
+                    <button class="btn-secondary" onclick="redeemTokens(50, 'eBook')">Redeem</button>
+                </div>
+                <div class="option-card">
+                    <h3>Course Access</h3>
+                    <p>Cost: 100 D-Tokens</p>
+                    <button class="btn-secondary" onclick="redeemTokens(100, 'Course')">Redeem</button>
+                </div>
+                <div class="option-card">
+                    <h3>Exclusive NFT</h3>
+                    <p>Cost: 200 D-Tokens</p>
+                    <button class="btn-secondary" onclick="redeemTokens(200, 'NFT')">Redeem</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 QuizTailor. All Rights Reserved.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script>
+        let web3;
+        let userAccount = null;
+        const tokenContractAddress = "0xYourTokenContractAddress"; // Replace with your BEP-20 token contract address
+        const tokenABI = [
+            // Your BEP-20 contract ABI
+        ];
+
+        document.getElementById('connectWallet').addEventListener('click', async () => {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    const accounts = await web3.eth.getAccounts();
+                    userAccount = accounts[0];
+                    document.getElementById('connectWallet').innerText = 'Wallet Connected';
+                    getTokenBalance();
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                alert("Please install MetaMask!");
+            }
+        });
+
+        async function getTokenBalance() {
+            const tokenContract = new web3.eth.Contract(tokenABI, tokenContractAddress);
+            const balance = await tokenContract.methods.balanceOf(userAccount).call();
+            document.getElementById('tokenBalance').innerText = web3.utils.fromWei(balance, 'ether');
+        }
+
+        async function redeemTokens(amount, rewardType) {
+            const tokenContract = new web3.eth.Contract(tokenABI, tokenContractAddress);
+            const balance = await tokenContract.methods.balanceOf(userAccount).call();
+
+            const tokenAmount = web3.utils.toWei(amount.toString(), 'ether');
+            if (balance >= tokenAmount) {
+                try {
+                    await tokenContract.methods.transfer('0xRedeemAddress', tokenAmount).send({ from: userAccount }); // Replace 0xRedeemAddress with your redemption address
+                    alert(`${rewardType} redeemed successfully!`);
+                    getTokenBalance();
+                } catch (error) {
+                    console.error(error);
+                    alert("Transaction failed!");
+                }
+            } else {
+                alert("Insufficient balance for redemption.");
+            }
+        }
+    </script>
+</body>
+</html>
